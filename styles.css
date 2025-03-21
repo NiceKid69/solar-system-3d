@@ -1,40 +1,33 @@
-body { 
-    margin: 0; 
-    overflow: hidden; 
-    touch-action: none;
+body {
+    margin: 0;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: radial-gradient(#000, #002);
 }
 
-canvas { 
-    display: block; 
+#container {
+    position: relative;
+    width: 100%;
+    height: 100%;
 }
 
-#ui {
-    position: fixed;
+#controls {
+    position: absolute;
     top: 10px;
     left: 10px;
-    color: white;
-    font-family: Arial;
-    background: rgba(0,0,0,0.7);
+    background: rgba(255, 255, 255, 0.8);
     padding: 10px;
     border-radius: 5px;
-    user-select: none;
-    z-index: 100;
 }
 
-.control-group {
-    margin: 5px 0;
+label {
+    font-size: 14px;
+    color: #333;
 }
 
 input[type="range"] {
-    vertical-align: middle;
-}
-
-button {
-    background: #444;
-    border: 1px solid #666;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    margin-top: 5px;
+    margin-left: 5px;
 }
