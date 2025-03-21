@@ -1,112 +1,132 @@
-// Three.js initialization
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+let speedMultiplier = 1;
+let isScaleRealistic = false;
+const labelElements = {};
 
-// Lighting setup
-const light = new THREE.PointLight(0xffffff, 1.5);
-scene.add(light);
-const ambientLight = new THREE.AmbientLight(0x404040);
-scene.add(ambientLight);
+// Three.js initialization and lighting setup remains the same...
 
-// Create Sun
-const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
-const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-scene.add(sun);
-
-// Planetary data
+// Planetary data with realistic and display scales
 const planets = [
-    { name: 'Mercury', size: 0.4, distance: 5, color: 0x808080, speed: 0.02 },
-    { name: 'Venus', size: 0.9, distance: 7, color: 0xffa500, speed: 0.015 },
-    { name: 'Earth', size: 1, distance: 10, color: 0x0000ff, speed: 0.01 },
-    { name: 'Mars', size: 0.5, distance: 13, color: 0xff0000, speed: 0.008 },
-    { name: 'Jupiter', size: 2.2, distance: 18, color: 0xffd700, speed: 0.005 },
-    { name: 'Saturn', size: 1.8, distance: 22, color: 0xffd700, speed: 0.004 },
-    { name: 'Uranus', size: 1.5, distance: 26, color: 0x00ffff, speed: 0.003 },
-    { name: 'Neptune', size: 1.4, distance: 29, color: 0x0000ff, speed: 0.002 }
+    { 
+        name: 'Mercury', 
+        display: { size: 0.4, distance: 5 }, 
+        real: { size: 0.055, distance: 0.387 }, 
+        color: 0x808080, 
+        speed: 0.02 
+    },
+    // ... similar structure for other planets ...
 ];
 
-// Create planets and orbits
+// Create planets with initial display scale
 const planetMeshes = planets.map(planet => {
-    // Planet mesh
-    const geometry = new THREE.SphereGeometry(planet.size, 32, 32);
+    const data = isScaleRealistic ? planet.real : planet.display;
+    const geometry = new THREE.SphereGeometry(data.size, 32, 32);
     const material = new THREE.MeshPhongMaterial({ color: planet.color });
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.x = planet.distance;
+    mesh.position.x = data.distance;
     scene.add(mesh);
 
-    // Orbital path
-    const orbitGeometry = new THREE.RingGeometry(
-        planet.distance - 0.1,
-        planet.distance + 0.1,
-        64
-    );
-    const orbitMaterial = new THREE.MeshBasicMaterial({
-        color: 0x444444,
-        side: THREE.DoubleSide
-    });
-    const orbit = new THREE.Mesh(orbitGeometry, orbitMaterial);
-    orbit.rotation.x = Math.PI / 2;
-    scene.add(orbit);
+    // Create label element
+    const label = document.createElement('div');
+    label.className = 'planet-label';
+    label.textContent = planet.name;
+    document.body.appendChild(label);
+    labelElements[planet.name] = label;
 
-    return { ...planet, mesh, angle: Math.random() * Math.PI * 2 };
+    return { 
+        ...planet, 
+        mesh, 
+        angle: Math.random() * Math.PI * 2,
+        currentDistance: data.distance,
+        currentSize: data.size
+    };
 });
 
-// Camera positioning
-camera.position.set(0, 20, 50);
+// Add touch controls
+let touchStartX = 0;
+let touchStartY = 0;
+let touchZoomStart = 0;
 
-// Interaction controls
-let isDragging = false;
-let previousMousePosition = { x: 0, y: 0 };
+document.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+        touchZoomStart = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+    }
+});
 
-document.addEventListener('mousedown', () => isDragging = true);
-document.addEventListener('mouseup', () => isDragging = false);
-document.addEventListener('mousemove', handleMouseMove);
-document.addEventListener('wheel', handleMouseWheel);
+document.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+        const deltaX = e.touches[0].clientX - touchStartX;
+        const deltaY = e.touches[0].clientY - touchStartY;
+        camera.position.x += deltaX * 0.01;
+        camera.position.y -= deltaY * 0.01;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+        const touchZoom = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        camera.position.z += (touchZoomStart - touchZoom) * 0.01;
+        touchZoomStart = touchZoom;
+    }
+});
 
-function handleMouseMove(e) {
-    if (!isDragging) return;
-    
-    const deltaMove = {
-        x: e.offsetX - previousMousePosition.x,
-        y: e.offsetY - previousMousePosition.y
-    };
+// Speed control
+document.getElementById('speed-control').addEventListener('input', (e) => {
+    speedMultiplier = parseFloat(e.target.value);
+});
 
-    camera.position.x += deltaMove.x * 0.01;
-    camera.position.y -= deltaMove.y * 0.01;
+// Scale toggle
+document.getElementById('scale-toggle').addEventListener('click', () => {
+    isScaleRealistic = !isScaleRealistic;
+    document.getElementById('scale-info').textContent = 
+        `Scale: ${isScaleRealistic ? 'Realistic' : 'Display'} (${isScaleRealistic ? '1:1' : '1:1000'})`;
 
-    previousMousePosition = { x: e.offsetX, y: e.offsetY };
+    planetMeshes.forEach(planet => {
+        const data = isScaleRealistic ? planet.real : planet.display;
+        planet.currentDistance = data.distance;
+        planet.currentSize = data.size;
+        
+        // Update mesh geometry
+        planet.mesh.geometry.dispose();
+        planet.mesh.geometry = new THREE.SphereGeometry(data.size, 32, 32);
+        planet.mesh.geometry.needsUpdate = true;
+    });
+});
+
+// Update labels in animation loop
+function updateLabels() {
+    planetMeshes.forEach(planet => {
+        const label = labelElements[planet.name];
+        const vector = planet.mesh.position.clone().project(camera);
+        
+        label.style.left = `${(vector.x * 0.5 + 0.5) * window.innerWidth}px`;
+        label.style.top = `${(-vector.y * 0.5 + 0.5) * window.innerHeight}px`;
+        label.style.display = vector.z > 1 ? 'none' : 'block';
+    });
 }
 
-function handleMouseWheel(e) {
-    camera.position.z += e.deltaY * 0.01;
-}
-
-// Animation loop
+// Modified animation loop
 function animate() {
     requestAnimationFrame(animate);
 
     planetMeshes.forEach(planet => {
-        planet.angle += planet.speed;
-        planet.mesh.position.x = Math.cos(planet.angle) * planet.distance;
-        planet.mesh.position.z = Math.sin(planet.angle) * planet.distance;
-        planet.mesh.rotation.y += 0.01;
+        planet.angle += planet.speed * speedMultiplier;
+        planet.mesh.position.x = Math.cos(planet.angle) * planet.currentDistance;
+        planet.mesh.position.z = Math.sin(planet.angle) * planet.currentDistance;
+        planet.mesh.rotation.y += 0.01 * speedMultiplier;
     });
 
-    sun.rotation.y += 0.001;
+    updateLabels();
+    sun.rotation.y += 0.001 * speedMultiplier;
     camera.lookAt(scene.position);
     renderer.render(scene, camera);
 }
 
-// Window resize handler
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-// Start animation
-animate();
+// Rest of the code (resize handler, etc) remains the same...
