@@ -1,50 +1,76 @@
-body { 
-    margin: 0; 
-    overflow: hidden; 
+body {
+    margin: 0;
+    overflow: hidden;
     touch-action: none;
+    background: #000;
 }
 
-canvas { 
-    display: block; 
+canvas {
+    display: block;
+}
+
+#loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-family: Arial, sans-serif;
+    font-size: 1.5em;
+    z-index: 1000;
 }
 
 #ui {
-    position: absolute;
+    position: fixed;
     top: 10px;
     left: 10px;
-    color: white;
-    font-family: Arial;
-    font-size: 14px;
-    user-select: none;
-    background: rgba(0,0,0,0.7);
+    color: #fff;
+    font-family: Arial, sans-serif;
+    background: rgba(0, 0, 0, 0.7);
     padding: 10px;
     border-radius: 5px;
+    user-select: none;
 }
 
 #controls {
     margin-top: 10px;
 }
 
-.planet-label {
-    position: absolute;
-    color: white;
-    font-family: Arial;
-    font-size: 12px;
-    white-space: nowrap;
-    pointer-events: none;
-    text-shadow: 1px 1px 2px black;
-}
-
 #speed-control {
-    vertical-align: middle;
     width: 120px;
+    vertical-align: middle;
 }
 
 button {
     background: #444;
     border: 1px solid #666;
-    color: white;
+    color: #fff;
     padding: 5px 10px;
     border-radius: 3px;
     cursor: pointer;
+    margin-left: 10px;
+}
+
+.planet-label {
+    position: absolute;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    pointer-events: none;
+    text-shadow: 1px 1px 2px #000;
+    white-space: nowrap;
+}
+
+#error {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    background: #c00;
+    padding: 20px;
+    border-radius: 5px;
+    max-width: 400px;
+    text-align: center;
 }
